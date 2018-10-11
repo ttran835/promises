@@ -10,11 +10,20 @@
 
 var fs = require('fs');
 var Promise = require('bluebird');
-
+var chainedFiles = require('./promisification');
+var pluckFirstLineFromFile = require('./callbackReview');
 
 
 var fetchProfileAndWriteToFile = function(readFilePath, writeFilePath) {
-  // TODO
+  return chainedFiles.getGitHubProfileAsync(user)
+    .then(function (exisitingUser) {
+      if (exisitingUser) {
+        throw new Error (user + ' exists!');
+      } else {
+        return user; 
+      }
+    })
+    .then();
 };
 
 // Export these functions so we can test them
