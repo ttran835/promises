@@ -10,20 +10,30 @@
 
 var fs = require('fs');
 var Promise = require('bluebird');
-var chainedFiles = require('./promisification');
-var pluckFirstLineFromFile = require('./callbackReview');
-
+var chainedFiles = require('./promisification.js');
+var pluckLine = require('./callbackReview.js');
+var pluckFirstLineFromFileAsync = Promise.promisify(pluckLine.pluckFirstLineFromFile);
 
 var fetchProfileAndWriteToFile = function(readFilePath, writeFilePath) {
-  return chainedFiles.getGitHubProfileAsync(user)
-    .then(function (exisitingUser) {
-      if (exisitingUser) {
-        throw new Error (user + ' exists!');
-      } else {
-        return user; 
-      }
+  return pluckFirstLineFromFileAsync(readFilePath)
+    .then(function(user) {
+      return chainedFiles.getGitHubProfileAsync(user);
     })
-    .then();
+    .then(function(userInfo) {
+      return new Promise(function (fulfill, reject) {
+        fs.writeFile(writeFilePath, JSON.stringify(userInfo), 'utf-8', function (error) {
+          if (error) {
+            console.log('There is an error...Please see, ', error);
+            reject(error);
+          } else {
+            fulfill(userInfo); 
+          }
+        });
+      });
+    })
+    .catch(function (error) {
+      console.log('Please see this error ,', error);
+    });
 };
 
 // Export these functions so we can test them
